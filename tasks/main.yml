@@ -1,0 +1,42 @@
+---
+# tasks file for docker
+
+- name: Add Docker GPG key.
+  rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    state: present
+
+- name: Add Docker repository.
+  become: true
+  get_url:
+    url: "{{ docker_yum_repo_url }}"
+    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+    mode: 0644
+
+- name: Disable test docker repo.
+  ini_file:
+    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+    section: 'docker-{{ docker_edition }}-test'
+    option: enabled
+    value: '0'
+
+- name: Install Docker.
+  package:
+    name: "{{ docker_package }}"
+    state: present
+  notify: restart docker
+
+- name: Ensure Docker is started and enabled at boot.
+  service:
+    name: docker
+    state: started
+    enabled: true
+    
+- name: Ensure handlers are notified now to avoid firewall conflicts.
+  meta: flush_handlers
+
+- name: Ensure docker users are added to the docker group.
+  user:
+    name: "{{ lookup('env','USER') }}"
+    groups: docker
+    append: true
