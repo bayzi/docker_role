@@ -13,6 +13,11 @@
     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
     mode: 0644
 
+- name: Define docker user
+  set_fact:
+    docker_user: "{{ ansible_user | default(lookup('env', 'USER')) }}"
+  when: docker_user == ''
+
 - name: Disable test docker repo.
   ini_file:
     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
@@ -37,6 +42,6 @@
 
 - name: Ensure docker users are added to the docker group.
   user:
-    name: "{{ lookup('env','USER') }}"
+    name: "{{ docker_user }}"
     groups: docker
     append: true
